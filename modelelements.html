@@ -1,0 +1,520 @@
+<html><head><base href="https://webmath.ai/">
+<title>AI Elemental Cubes</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap');
+
+:root {
+  --cube-size: min(200px, 25vw);
+  --inner-cube-size: calc(var(--cube-size) * 0.5);
+  --container-width: min(1200px, 95vw);
+  --container-height: min(800px, 80vh);
+}
+
+body {
+  font-family: 'Roboto', Arial, sans-serif;
+  background: #000000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  margin: 0;
+  overflow-x: hidden;
+}
+
+#container-all {
+  text-align: center;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 1em;
+  border-radius: 20px;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+  max-width: var(--container-width);
+  width: 100%;
+  position: relative;
+  z-index: 1;
+}
+
+#cubes-container {
+  width: 100%;
+  height: var(--container-height);
+  position: relative;
+  perspective: 1600px;
+  margin: 1em auto;
+}
+
+.cube-wrapper {
+  width: var(--cube-size);
+  height: var(--cube-size);
+  position: absolute;
+  transform-style: preserve-3d;
+}
+
+#cube-wrapper-neural { top: 5%; left: 50%; transform: translateX(-50%); }
+#cube-wrapper-deep { bottom: 5%; left: 25%; }
+#cube-wrapper-ml { bottom: 5%; right: 25%; }
+
+.cube, .inner-cube {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  transform-style: preserve-3d;
+  transition: transform 0.2s;
+}
+
+.cube { cursor: move; }
+
+.inner-cube {
+  position: absolute;
+  top: 25%;
+  left: 25%;
+  width: 50%;
+  height: 50%;
+}
+
+.face {
+  position: absolute;
+  width: var(--cube-size);
+  height: var(--cube-size);
+  border: 2px solid #00ffff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(var(--cube-size) * 0.11);
+  font-weight: bold;
+  background: rgba(0, 0, 0, 0.8);
+  color: #00ffff;
+  user-select: none;
+  text-shadow: 0 0 10px #00ffff;
+  box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+}
+
+.inner-face {
+  width: var(--inner-cube-size);
+  height: var(--inner-cube-size);
+  background: rgba(0, 0, 0, 0.9);
+  font-size: calc(var(--inner-cube-size) * 0.14);
+}
+
+.corner {
+  position: absolute;
+  font-size: calc(var(--cube-size) * 0.06);
+  color: #ff00ff;
+}
+
+.top-left { top: 5px; left: 5px; }
+.top-right { top: 5px; right: 5px; }
+.bottom-left { bottom: 5px; left: 5px; }
+.bottom-right { bottom: 5px; right: 5px; }
+
+.cube .front, .inner-cube .front   { transform: rotateY(   0deg ) translateZ(calc(var(--cube-size) * 0.5)); }
+.cube .back, .inner-cube .back    { transform: rotateY( 180deg ) translateZ(calc(var(--cube-size) * 0.5)); }
+.cube .right, .inner-cube .right   { transform: rotateY(  90deg ) translateZ(calc(var(--cube-size) * 0.5)); }
+.cube .left, .inner-cube .left    { transform: rotateY( -90deg ) translateZ(calc(var(--cube-size) * 0.5)); }
+.cube .top, .inner-cube .top     { transform: rotateX(  90deg ) translateZ(calc(var(--cube-size) * 0.5)); }
+.cube .bottom, .inner-cube .bottom  { transform: rotateX( -90deg ) translateZ(calc(var(--cube-size) * 0.5)); }
+
+.inner-cube .front, .inner-cube .back, .inner-cube .right, .inner-cube .left, .inner-cube .top, .inner-cube .bottom {
+  transform: translateZ(calc(var(--inner-cube-size) * 0.5));
+}
+
+.inner-cube .back { transform: rotateY(180deg) translateZ(calc(var(--inner-cube-size) * 0.5)); }
+.inner-cube .right { transform: rotateY(90deg) translateZ(calc(var(--inner-cube-size) * 0.5)); }
+.inner-cube .left { transform: rotateY(-90deg) translateZ(calc(var(--inner-cube-size) * 0.5)); }
+.inner-cube .top { transform: rotateX(90deg) translateZ(calc(var(--inner-cube-size) * 0.5)); }
+.inner-cube .bottom { transform: rotateX(-90deg) translateZ(calc(var(--inner-cube-size) * 0.5)); }
+
+.circle {
+  position: absolute;
+  width: calc(var(--cube-size) * 2.4);
+  height: calc(var(--cube-size) * 2.4);
+  border: 5px solid;
+  border-radius: 50%;
+  pointer-events: none;
+  box-shadow: 0 0 30px currentColor;
+}
+
+#circle-neural { border-color: #00ffff; top: 0; left: 50%; transform: translateX(-50%); }
+#circle-deep { border-color: #ff00ff; bottom: 0; left: 15%; }
+#circle-ml { border-color: #ffff00; bottom: 0; right: 15%; }
+
+.button-group {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 10px;
+}
+
+.button {
+  border: none;
+  color: #000000;
+  padding: 8px 16px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 14px;
+  margin: 4px 4px;
+  cursor: pointer;
+  border-radius: 20px;
+  font-weight: bold;
+  text-transform: uppercase;
+  transition: all 0.3s ease;
+}
+
+#toggle-rotation-neural, #reset-cube-neural { background-color: #00ffff; }
+#toggle-rotation-deep, #reset-cube-deep { background-color: #ff00ff; }
+#toggle-rotation-ml, #reset-cube-ml { background-color: #ffff00; }
+
+.button:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 15px currentColor;
+}
+
+#zen-background {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: min(300px, 40vw);
+  color: rgba(255, 255, 255, 0.03);
+  z-index: 0;
+  pointer-events: none;
+  user-select: none;
+  font-weight: bold;
+}
+
+@keyframes glow {
+  0% { text-shadow: 0 0 5px #fff, 0 0 10px #fff, 0 0 15px #00ffff, 0 0 20px #00ffff, 0 0 35px #00ffff, 0 0 40px #00ffff, 0 0 50px #00ffff; }
+  100% { text-shadow: 0 0 10px #fff, 0 0 20px #fff, 0 0 30px #00ffff, 0 0 40px #00ffff, 0 0 70px #00ffff, 0 0 80px #00ffff, 0 0 100px #00ffff; }
+}
+
+h1 {
+  color: #ffffff;
+  font-size: min(36px, 5vw);
+  margin-bottom: 20px;
+  text-shadow: 0 0 10px #00ffff;
+  animation: glow 2s ease-in-out infinite alternate;
+}
+
+p, a {
+  color: #ffffff;
+  font-size: min(14px, 3vw);
+  line-height: 1.4;
+  margin-top: 20px;
+}
+
+a {
+  color: #00ffff;
+  text-decoration: none;
+  transition: all 0.3s ease;
+}
+
+a:hover {
+  color: #ff00ff;
+  text-shadow: 0 0 10px #ff00ff;
+}
+
+@media (max-width: 768px) {
+  #cubes-container {
+    height: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .cube-wrapper {
+    position: relative;
+    top: auto;
+    left: auto;
+    right: auto;
+    bottom: auto;
+    margin: 20px 0;
+  }
+  
+  .circle {
+    display: none;
+  }
+}
+</style>
+</head>
+<body>
+<div id="zen-background">ZEN</div>
+<div id="container-all">
+  <h1>AI Elemental Cubes</h1>
+  <div id="cubes-container">
+    <div id="circle-neural" class="circle"></div>
+    <div id="circle-deep" class="circle"></div>
+    <div id="circle-ml" class="circle"></div>
+    
+    <div id="cube-wrapper-neural" class="cube-wrapper">
+      <div id="cube-neural" class="cube" style="transform: rotateX(-35deg) rotateY(45deg)">
+        <div class="face front">
+          Neural Network
+          <span class="corner top-left">CNN</span>
+          <span class="corner top-right">RNN</span>
+          <span class="corner bottom-left">GAN</span>
+          <span class="corner bottom-right">LSTM</span>
+        </div>
+        <div class="face back">
+          Neural Network
+          <span class="corner top-left">ANN</span>
+          <span class="corner top-right">DNN</span>
+          <span class="corner bottom-left">SOM</span>
+          <span class="corner bottom-right">DBN</span>
+        </div>
+        <div class="face right">
+          Neural Network
+          <span class="corner top-left">MLP</span>
+          <span class="corner top-right">AutoEncoder</span>
+          <span class="corner bottom-left">Hopfield</span>
+          <span class="corner bottom-right">Boltzmann</span>
+        </div>
+        <div class="face left">
+          Neural Network
+          <span class="corner top-left">Perceptron</span>
+          <span class="corner top-right">Capsule Net</span>
+          <span class="corner bottom-left">Echo State</span>
+          <span class="corner bottom-right">Transformer</span>
+        </div>
+        <div class="face top">
+          Activation
+          <span class="corner top-left">ReLU</span>
+          <span class="corner top-right">Sigmoid</span>
+          <span class="corner bottom-left">Tanh</span>
+          <span class="corner bottom-right">Softmax</span>
+        </div>
+        <div class="face bottom">
+          Optimization
+          <span class="corner top-left">SGD</span>
+          <span class="corner top-right">Adam</span>
+          <span class="corner bottom-left">RMSprop</span>
+          <span class="corner bottom-right">Adagrad</span>
+        </div>
+        <div id="inner-cube-neural" class="inner-cube">
+          <div class="face inner-face front">Backprop</div>
+          <div class="face inner-face back">Gradient Descent</div>
+          <div class="face inner-face right">Dropout</div>
+          <div class="face inner-face left">Batch Norm</div>
+          <div class="face inner-face top">Weight Init</div>
+          <div class="face inner-face bottom">Learning Rate</div>
+        </div>
+      </div>
+    </div>
+    
+    <div id="cube-wrapper-deep" class="cube-wrapper">
+      <div id="cube-deep" class="cube" style="transform: rotateX(-35deg) rotateY(45deg)">
+        <div class="face front">
+          Deep Learning
+          <span class="corner top-left">Transfer</span>
+          <span class="corner top-right">Reinforcement</span>
+          <span class="corner bottom-left">Unsupervised</span>
+          <span class="corner bottom-right">Federated</span>
+        </div>
+        <div class="face back">
+          Deep Learning
+          <span class="corner top-left">Meta</span>
+          <span class="corner top-right">Few-shot</span>
+          <span class="corner bottom-left">Zero-shot</span>
+          <span class="corner bottom-right">Curriculum</span>
+        </div>
+        <div class="face right">
+          Deep Learning
+          <span class="corner top-left">Adversarial</span>
+          <span class="corner top-right">Self-supervised</span>
+          <span class="corner bottom-left">Distillation</span>
+          <span class="corner bottom-right">Multitask</span>
+        </div>
+        <div class="face left">
+          Deep Learning
+          <span class="corner top-left">Ensemble</span>
+          <span class="corner top-right">Bayesian</span>
+          <span class="corner bottom-left">Quantum</span>
+          <span class="corner bottom-right">Neuro-symbolic</span>
+        </div>
+        <div class="face top">
+          Applications
+          <span class="corner top-left">NLP</span>
+          <span class="corner top-right">Vision</span>
+          <span class="corner bottom-left">Speech</span>
+          <span class="corner bottom-right">Robotics</span>
+        </div>
+        <div class="face bottom">
+          Challenges
+          <span class="corner top-left">Explainability</span>
+          <span class="corner top-right">Robustness</span>
+          <span class="corner bottom-left">Efficiency</span>
+          <span class="corner bottom-right">Scalability</span>
+        </div>
+        <div id="inner-cube-deep" class="inner-cube">
+          <div class="face inner-face front">Data Augmentation</div>
+          <div class="face inner-face back">Feature Engineering</div>
+          <div class="face inner-face right">Model Compression</div>
+          <div class="face inner-face left">Hyperparameter Tuning</div>
+          <div class="face inner-face top">Architecture Search</div>
+          <div class="face inner-face bottom">Continual Learning</div>
+        </div>
+      </div>
+    </div>
+    
+    <div id="cube-wrapper-ml" class="cube-wrapper">
+      <div id="cube-ml" class="cube" style="transform: rotateX(-35deg) rotateY(45deg)">
+        <div class="face front">
+          Machine Learning
+          <span class="corner top-left">SVM</span>
+          <span class="corner top-right">Decision Tree</span>
+          <span class="corner bottom-left">KNN</span>
+          <span class="corner bottom-right">Naive Bayes</span>
+        </div>
+        <div class="face back">
+          Machine Learning
+          <span class="corner top-left">Random Forest</span>
+          <span class="corner top-right">Gradient Boosting</span>
+          <span class="corner bottom-left">XGBoost</span>
+          <span class="corner bottom-right">LightGBM</span>
+        </div>
+        <div class="face right">
+          Machine Learning
+          <span class="corner top-left">Logistic Regression</span>
+          <span class="corner top-right">Linear Regression</span>
+          <span class="corner bottom-left">Ridge Regression</span>
+          <span class="corner bottom-right">Lasso Regression</span>
+        </div>
+        <div class="face left">
+          Machine Learning
+          <span class="corner top-left">K-means</span>
+          <span class="corner top-right">DBSCAN</span>
+          <span class="corner bottom-left">PCA</span>
+          <span class="corner bottom-right">t-SNE</span>
+        </div>
+        <div class="face top">
+          Evaluation
+          <span class="corner top-left">Accuracy</span>
+          <span class="corner top-right">Precision</span>
+          <span class="corner bottom-left">Recall</span>
+          <span class="corner bottom-right">F1-score</span>
+        </div>
+        <div class="face bottom">
+          Techniques
+          <span class="corner top-left">Cross-validation</span>
+          <span class="corner top-right">Regularization</span>
+          <span class="corner bottom-left">Ensemble</span>
+          <span class="corner bottom-right">Feature Selection</span>
+        </div>
+        <div id="inner-cube-ml" class="inner-cube">
+          <div class="face inner-face front">Supervised</div>
+          <div class="face inner-face back">Unsupervised</div>
+          <div class="face inner-face right">Semi-supervised</div>
+          <div class="face inner-face left">Reinforcement</div>
+          <div class="face inner-face top">Online Learning</div>
+          <div class="face inner-face bottom">Active Learning</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="button-group">
+    <button id="toggle-rotation-neural" class="button">Neural</button>
+    <button id="reset-cube-neural" class="button">Reset</button>
+    <button id="toggle-rotation-deep" class="button">Deep</button>
+    <button id="reset-cube-deep" class="button">Reset</button>
+    <button id="toggle-rotation-ml" class="button">ML</button>
+    <button id="reset-cube-ml" class="button">Reset</button>
+  </div>
+  
+  <p>These cube arrangements showcase various concepts and techniques in Artificial Intelligence and Machine Learning. The outer cubes display different aspects and methods, while the inner cubes focus on core principles and approaches.</p>
+  <a href="https://en.wikipedia.org/wiki/Artificial_intelligence">Learn more about AI</a>
+</div>
+
+<script>
+function setupCube(cubeId, innerId, toggleId, resetId) {
+  const cube = document.getElementById(cubeId);
+  const innerCube = document.getElementById(innerId);
+  let rotationX = -35;
+  let rotationY = 45;
+  let isRotating = false;
+  let animationId;
+
+  function rotateCube(timestamp) {
+    rotationY += 0.5;
+    cube.style.transform = `rotateX(${rotationX}deg) rotateY(${rotationY}deg)`;
+    innerCube.style.transform = `rotateY(${-rotationY * 2}deg)`;
+
+    if (isRotating) {
+      animationId = requestAnimationFrame(rotateCube);
+    }
+  }
+
+  function toggleRotation() {
+    isRotating = !isRotating;
+    if (isRotating) {
+      animationId = requestAnimationFrame(rotateCube);
+    } else {
+      cancelAnimationFrame(animationId);
+    }
+  }
+
+  function resetCube() {
+    isRotating = false;
+    cancelAnimationFrame(animationId);
+    rotationX = -35;
+    rotationY = 45;
+    cube.style.transform = `rotateX(${rotationX}deg) rotateY(${rotationY}deg)`;
+    innerCube.style.transform = 'rotateY(0deg)';
+  }
+
+  cube.addEventListener('mousedown', startDrag);
+  cube.addEventListener('touchstart', startDrag);
+  document.addEventListener('mousemove', drag);
+  document.addEventListener('touchmove', drag);
+  document.addEventListener('mouseup', stopDrag);
+  document.addEventListener('touchend', stopDrag);
+  document.addEventListener('mouseleave', stopDrag);
+
+  let isDragging = false;
+  let previousMousePosition = { x: 0, y: 0 };
+
+  function startDrag(e) {
+    isDragging = true;
+    previousMousePosition = getEventPosition(e);
+  }
+
+  function drag(e) {
+    if (!isDragging) return;
+    
+    const currentPosition = getEventPosition(e);
+    const deltaMove = {
+      x: currentPosition.x - previousMousePosition.x,
+      y: currentPosition.y - previousMousePosition.y
+    };
+
+    rotationY += deltaMove.x * 0.5;
+    rotationX -= deltaMove.y * 0.5;
+
+    cube.style.transform = `rotateX(${rotationX}deg) rotateY(${rotationY}deg)`;
+    innerCube.style.transform = `rotateY(${-rotationY * 2}deg)`;
+
+    previousMousePosition = currentPosition;
+  }
+
+  function stopDrag(e) {
+    isDragging = false;
+  }
+
+  function getEventPosition(e) {
+    if (e.touches && e.touches.length > 0) {
+      return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    } else {
+      return { x: e.clientX, y: e.clientY };
+    }
+  }
+
+  document.getElementById(toggleId).addEventListener('click', toggleRotation);
+  document.getElementById(resetId).addEventListener('click', resetCube);
+}
+
+setupCube('cube-neural', 'inner-cube-neural', 'toggle-rotation-neural', 'reset-cube-neural');
+setupCube('cube-deep', 'inner-cube-deep', 'toggle-rotation-deep', 'reset-cube-deep');
+setupCube('cube-ml', 'inner-cube-ml', 'toggle-rotation-ml', 'reset-cube-ml');
+</script>
+</body>
+</html>
